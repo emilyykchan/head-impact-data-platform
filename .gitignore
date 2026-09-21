@@ -1,1 +1,6 @@
 .venv/
+local/
+
+.DS_store
+.duckdb
+.duckdb.wal
