@@ -8,7 +8,7 @@
 -- Kinematics: processed only
 --
 -- IMPORTANT
--- 1. EDIT the source CSV path below before running on another machine.
+-- 1. Edit the source CSV path below before running on another machine.
 -- 2. The staging table is recreated from the source CSV.
 -- 3. Main-table inserts use ON CONFLICT DO NOTHING where possible.
 -- 4. QC SELECT statements are safe to rerun.
@@ -23,7 +23,7 @@ CREATE SCHEMA IF NOT EXISTS staging;
 CREATE OR REPLACE TABLE staging.rugby_raw AS
 SELECT *
 FROM read_csv_auto(
-    '/path/to/source//RugbyMatchImpacts160523e.csv',
+    '/Users/yc4421/Library/CloudStorage/Box-Box/1-Kinematics/4_Rugby_May1/Rugby Match Impacts 160523e.csv',
     header = true,
     all_varchar = true
 );
@@ -67,12 +67,13 @@ INSERT INTO datasets (
     sample_interval_variable,
     default_window_length_samples,
     window_length_variable,
+    received_month,
     notes,
     default_window_length_ms
 )
 VALUES (
     'DS004',
-    'Protecht v2',
+    'RFU1155',
     'RFU',
     'Protecht v2',
     'SWA',
@@ -83,6 +84,7 @@ VALUES (
     FALSE,
     104,
     FALSE,
+    DATE '2023-05-01',
     'Rugby match impact dataset; processed Protecht v2 kinematics',
     104.0
 )
