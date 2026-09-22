@@ -1,6 +1,13 @@
-.venv/
-local/
+# Restricted, source data
+data/
 
-.DS_store
-.duckdb
-.duckdb.wal
+# Local databases
+local/
+*.duckdb
+*.duckdb.wal
+
+# environment 
+.venv/
+
+# Mac
+.DS_Store
