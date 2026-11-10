@@ -11,3 +11,18 @@ local/
 
 # Mac
 .DS_Store
+# Local secrets / configuration
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+
+# Python/runtime
+__pycache__/
+*.py[cod]
+
+# Generated exports
+exports/
+
+# macOS metadata
+._*
