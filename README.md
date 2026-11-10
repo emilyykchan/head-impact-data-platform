@@ -29,20 +29,6 @@ Research data and DuckDB database files are not stored in this repository.
 
 For local setup and running the Streamlit app, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Quick start
-
-For normal local development, the full workflow is:
-
-```text
-cd /Users/yc4421/Library/CloudStorage/Box-Box/Github/head-impact-data-platform
-source ~/headimpact-streamlit-venv/bin/activate
-
-export HEAD_IMPACT_DB="$PWD/local/head_impacts.duckdb"
-export HEAD_IMPACT_NAS_ROOT="/Volumes/Public/HeadImpactDatabase"
-
-python -m streamlit run app/streamlit_app.py
-```
-
 ## Architecture
 
 The platform separates software, structured metadata and large research files.
