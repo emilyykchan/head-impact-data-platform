@@ -1,0 +1,14 @@
+services:
+  head-impact-platform:
+    build: .
+    ports:
+      - "8501:8501"
+    environment:
+      HEAD_IMPACT_DB: /data/head_impacts.duckdb
+      HEAD_IMPACT_NAS_ROOT: /mnt/headimpact
+      HEAD_IMPACT_EXPORT_DIR: /exports
+    volumes:
+      # Example only. Replace with deployment-specific paths.
+      - ./local/head_impacts.duckdb:/data/head_impacts.duckdb:ro
+      # - /server/path/to/HeadImpactDatabase:/mnt/headimpact:ro
+      - ./local/exports:/exports
