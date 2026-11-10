@@ -240,6 +240,31 @@ Push the branch:
 git push -u origin my-feature-name
 ```
 
+## Update the README schema diagram
+
+The database schema diagram in `README.md` is generated automatically from:
+
+```text
+schema/schema.sql
+```
+
+After changing tables or foreign-key relationships in `schema.sql`, regenerate the Mermaid diagram with:
+
+```bash
+python scripts/generate_schema_mermaid.py
+```
+
+The script reads the tables and foreign-key relationships from `schema.sql` and replaces the Mermaid diagram inside the reserved section of `README.md`.
+
+After running it, review the changes:
+
+```bash
+git diff README.md
+```
+
+The generated Mermaid block should not normally be edited manually.
+
+
 ## Repository boundaries
 
 The repository may contain:
