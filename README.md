@@ -29,18 +29,19 @@ Research data and DuckDB database files are not stored in this repository.
 
 For local setup and running the Streamlit app, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
-Quick start
+## Quick start
 
 For normal local development, the full workflow is:
 
+```text
 cd /Users/yc4421/Library/CloudStorage/Box-Box/Github/head-impact-data-platform
-
 source ~/headimpact-streamlit-venv/bin/activate
 
 export HEAD_IMPACT_DB="$PWD/local/head_impacts.duckdb"
 export HEAD_IMPACT_NAS_ROOT="/Volumes/Public/HeadImpactDatabase"
 
 python -m streamlit run app/streamlit_app.py
+```
 
 ## Architecture
 
@@ -69,7 +70,8 @@ This allows the same database to be used across local development machines, serv
 
 ## Database schema
 
-The diagram below is generated automatically from [`schema/schema.sql`](schema/schema.sql).
+The diagram below is generated automatically from [`schema/schema.sql`](schema/schema.sql). 
+Full table definitions are available in [`schema/schema.sql`](schema/schema.sql).
 
 <!-- SCHEMA_MERMAID_START -->
 ```mermaid
@@ -117,7 +119,6 @@ erDiagram
 ```
 <!-- SCHEMA_MERMAID_END -->
 
-Full table definitions are available in [`schema/schema.sql`](schema/schema.sql).
 
 ## Local development
 
