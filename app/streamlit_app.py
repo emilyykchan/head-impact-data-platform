@@ -6,6 +6,7 @@ import plotly.express as px
 import streamlit as st
 
 import db
+import export_page
 from config import DB_PATH, STORAGE_ROOTS
 
 
@@ -103,8 +104,8 @@ def render_home(summary):
     with c:
         st.markdown("#### Build an export")
         st.write(
-            "Create an impact-level inventory for selected datasets and "
-            "availability filters."
+            "Choose impact-level numerical variables and download actual "
+            "measurements, time series, or registered NAS files."
         )
         if st.button("Build an export", use_container_width=True):
             nav_to("Build an export")
@@ -116,12 +117,12 @@ def render_home(summary):
             "label": "Name",
             "status": "Status",
             "impacts": "Impacts",
-            "raw_records": "Raw",
-            "processed_records": "Processed",
-            "waveform_records": "Waveforms",
-            "simulations": "Simulations",
-            "mps_fields": "MPS",
-            "mpsr_fields": "MPSR",
+            "raw_records": "Raw records (count)",
+            "processed_records": "Processed records (count)",
+            "waveform_records": "Waveforms (count)",
+            "simulations": "Simulations (count)",
+            "mps_fields": "MPS files (count)",
+            "mpsr_fields": "MPSR files (count)",
         }
     )
 
@@ -132,12 +133,12 @@ def render_home(summary):
                 "Name",
                 "Status",
                 "Impacts",
-                "Raw",
-                "Processed",
-                "Waveforms",
-                "Simulations",
-                "MPS",
-                "MPSR",
+                "Raw records (count)",
+                "Processed records (count)",
+                "Waveforms (count)",
+                "Simulations (count)",
+                "MPS files (count)",
+                "MPSR files (count)",
             ]
         ]
     )
@@ -161,6 +162,46 @@ def render_datasets(summary):
     row = summary.loc[summary["dataset_id"] == chosen].iloc[0]
     badge(row["status"])
 
+    st.subheader("Dataset metadata")
+    metadata = db.dataset_metadata(chosen, DB_PATH)
+    if metadata.empty:
+        st.warning("No metadata record found for this dataset.")
+    else:
+        details = metadata.iloc[0]
+        key_fields = [
+            ("Sport", "sport"),
+            ("Mouthguard / device", "device"),
+            ("Source institution", "source_institution"),
+            ("Sample interval (ms)", "default_sample_interval_ms"),
+            ("Window length (ms)", "default_window_length_ms"),
+            ("Window length (samples)", "default_window_length_samples"),
+        ]
+        info_cols = st.columns(3)
+        for idx, (label, field) in enumerate(key_fields):
+            value = details.get(field)
+            display_value = "Not recorded" if value is None or str(value) in (
+                "", "nan", "NaT", "<NA>", "None"
+            ) else str(value)
+            info_cols[idx % 3].metric(label, display_value)
+
+        if "notes" in details and details["notes"] is not None:
+            notes = str(details["notes"])
+            if notes not in ("", "nan", "<NA>", "None"):
+                st.markdown("**Dataset notes**")
+                st.write(notes)
+
+        st.markdown("**Complete registered metadata**")
+        metadata_rows = details.rename_axis("Field").reset_index(name="Value")
+        dataframe(metadata_rows)
+
+        st.download_button(
+            "Download dataset metadata (CSV)",
+            data=metadata.to_csv(index=False).encode("utf-8-sig"),
+            file_name=f"{chosen}_metadata.csv",
+            mime="text/csv",
+        )
+
+    st.subheader("Data availability")
     cols = st.columns(6)
     cols[0].metric("Impacts", f"{int(row.impacts):,}")
     cols[1].metric("Raw records", f"{int(row.raw_records):,}")
@@ -190,12 +231,23 @@ def render_datasets(summary):
         )
         inv = inv.loc[mask]
 
-    dataframe(inv)
+    count_labels = {
+        "kinematic_records": "Kinematic records (count)",
+        "raw_records": "Raw records (count)",
+        "processed_records": "Processed records (count)",
+        "simulations": "Simulation runs (count)",
+        "mps_fields": "MPS spatial files (count)",
+        "mpsr_fields": "MPSR spatial files (count)",
+    }
+    readable_inv = inv.rename(columns=count_labels)
+    st.caption("Inventory availability columns show **counts**, not yes/no flags. "
+               "For example, 1 means one registered record, and 0 means none.")
+    dataframe(readable_inv)
 
     if not inv.empty:
         st.download_button(
             "Download this inventory as CSV",
-            inv.to_csv(index=False).encode(),
+            readable_inv.to_csv(index=False).encode(),
             file_name=f"{chosen}_impact_inventory.csv",
             mime="text/csv",
         )
@@ -362,62 +414,8 @@ def render_impact(summary):
 
 
 def render_export(summary):
-    st.title("Build an export")
-
-    finalised = summary.loc[
-        summary["status"] == "FINALISED",
-        "dataset_id",
-    ].tolist()
-
-    selected = st.multiselect(
-        "Datasets",
-        summary["dataset_id"].tolist(),
-        default=finalised,
-        format_func=lambda x: (
-            f"{x} — {db.DATASET_LABELS.get(x, '')}"
-        ),
-    )
-
-    if "DS009" in selected:
-        st.warning(
-            "DS009 is paused. It can be included deliberately, "
-            "but it is not considered finalised."
-        )
-
-    stages = st.multiselect(
-        "Kinematic stages counted in selected_kinematic_records",
-        ["raw", "processed"],
-        default=["raw", "processed"],
-    )
-
-    sim_filter = st.radio(
-        "Simulation availability",
-        ["Any", "Has simulation", "No simulation"],
-        horizontal=True,
-    )
-
-    export = db.impact_export(
-        selected,
-        stages,
-        sim_filter,
-        DB_PATH,
-    )
-
-    st.caption(f"{len(export):,} impacts")
-    dataframe(export)
-
-    st.download_button(
-        "Download CSV",
-        export.to_csv(index=False).encode(),
-        file_name="head_impact_export.csv",
-        mime="text/csv",
-        use_container_width=True,
-    )
-
-    st.caption(
-        "This starter exports an impact-level inventory/availability table. "
-        "It does not copy restricted NAS files."
-    )
+    """Actual scientific data export; the inventory remains in Browse datasets."""
+    export_page.render_export(summary, DB_PATH, db)
 
 
 def render_advanced():

@@ -118,6 +118,15 @@ def dataset_summary(db_path: str = DB_PATH) -> pd.DataFrame:
     return df
 
 
+def dataset_metadata(dataset_id: str, db_path: str = DB_PATH) -> pd.DataFrame:
+    """Return the complete registered metadata row for a dataset."""
+    return query_df(
+        "SELECT * FROM datasets WHERE dataset_id = ?",
+        [dataset_id],
+        db_path,
+    )
+
+
 def dataset_impacts(
     dataset_id: str,
     db_path: str = DB_PATH,
