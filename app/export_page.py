@@ -27,7 +27,7 @@ def _cached_dataset_columns(db_path: str) -> dict[str, str]:
 
 
 def _filename(kind: str, built_at: datetime) -> str:
-    return f"head_impact_export_{built_at.strftime('%y%m%d-%H%M%S')}.{kind}"
+    return f"head_impact_export_{built_at.strftime('%Y-%m-%d_%H-%M-%S')}.{kind}"
 
 
 def render_export(summary: pd.DataFrame, db_path: str, db_module) -> None:
