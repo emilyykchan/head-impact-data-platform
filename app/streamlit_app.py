@@ -161,6 +161,46 @@ def render_datasets(summary):
     row = summary.loc[summary["dataset_id"] == chosen].iloc[0]
     badge(row["status"])
 
+    st.subheader("Dataset metadata")
+    metadata = db.dataset_metadata(chosen, DB_PATH)
+    if metadata.empty:
+        st.warning("No metadata record found for this dataset.")
+    else:
+        details = metadata.iloc[0]
+        key_fields = [
+            ("Sport", "sport"),
+            ("Mouthguard / device", "device"),
+            ("Source institution", "source_institution"),
+            ("Sample interval (ms)", "default_sample_interval_ms"),
+            ("Window length (ms)", "default_window_length_ms"),
+            ("Window length (samples)", "default_window_length_samples"),
+        ]
+        info_cols = st.columns(3)
+        for idx, (label, field) in enumerate(key_fields):
+            value = details.get(field)
+            display_value = "Not recorded" if value is None or str(value) in (
+                "", "nan", "NaT", "<NA>", "None"
+            ) else str(value)
+            info_cols[idx % 3].metric(label, display_value)
+
+        if "notes" in details and details["notes"] is not None:
+            notes = str(details["notes"])
+            if notes not in ("", "nan", "<NA>", "None"):
+                st.markdown("**Dataset notes**")
+                st.write(notes)
+
+        st.markdown("**Complete registered metadata**")
+        metadata_rows = details.rename_axis("Field").reset_index(name="Value")
+        dataframe(metadata_rows)
+
+        st.download_button(
+            "Download dataset metadata (CSV)",
+            data=metadata.to_csv(index=False).encode("utf-8-sig"),
+            file_name=f"{chosen}_metadata.csv",
+            mime="text/csv",
+        )
+
+    st.subheader("Data availability")
     cols = st.columns(6)
     cols[0].metric("Impacts", f"{int(row.impacts):,}")
     cols[1].metric("Raw records", f"{int(row.raw_records):,}")
