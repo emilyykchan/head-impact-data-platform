@@ -9,6 +9,7 @@ import pandas as pd
 import streamlit as st
 
 import data_exports as ex
+from impact_selection import parse_impact_ids, resolve_impact_ids
 
 
 @st.cache_data(ttl=60, show_spinner=False)
@@ -76,11 +77,49 @@ def render_export(summary: pd.DataFrame, db_path: str, db_module) -> None:
         st.warning("There are no matching impacts.")
         return
     with st.expander("Choose individual impacts (optional)"):
-        st.caption("Leave this empty to export all matching impacts. "
+        st.caption("Leave both selectors empty to export all matching impacts. "
                    "For ZIP downloads, narrow the selection to at most 100 impacts.")
         picks = st.multiselect("Impact UIDs", impacts["impact_uid"].tolist())
-    if picks:
-        impacts = impacts.loc[impacts["impact_uid"].isin(picks)].copy()
+        st.caption("Or paste multiple IDs below (one per line, or separated by commas/spaces).")
+        pasted_ids = st.text_area(
+            "Paste impact IDs (bulk search)",
+            placeholder="MMA374\nMMA377, IMP_DS002_MMA378",
+            help="Exact matching of impact UID, source impact ID, or short impact ID "
+                 "within the selected datasets and filters.",
+        )
+    bulk_tokens = parse_impact_ids(pasted_ids)
+    bulk_matches, bulk_missing, bulk_ambiguous = resolve_impact_ids(pasted_ids, impacts)
+    bulk_valid = not bulk_missing and not bulk_ambiguous
+    if bulk_tokens:
+        st.caption(
+            f"Bulk search: {len(bulk_matches)} matched · "
+            f"{len(bulk_missing)} not found · "
+            f"{len(bulk_ambiguous)} ambiguous "
+            f"({len(bulk_tokens)} unique input IDs)"
+        )
+        if bulk_missing or bulk_ambiguous:
+            st.warning(
+                "Some IDs could not be resolved within the current datasets and filters. "
+                "Review the lists below before exporting."
+            )
+        if bulk_missing:
+            with st.expander(f"Not found ({len(bulk_missing)})", expanded=True):
+                st.caption("One ID per line. Use the copy icon to copy the full list.")
+                st.code("\n".join(bulk_missing), language=None)
+        if bulk_ambiguous:
+            with st.expander(f"Ambiguous ({len(bulk_ambiguous)})", expanded=True):
+                st.caption("Use full impact UIDs to distinguish these records.")
+                st.code(
+                    "\n".join(
+                        f"{token} ({len(candidates)} matches)"
+                        for token, candidates in bulk_ambiguous.items()
+                    ),
+                    language=None,
+                )
+    # Both selectors are optional; when either is used, combine them by union.
+    selected_uids = set(picks) | set(bulk_matches)
+    if picks or bulk_tokens:
+        impacts = impacts.loc[impacts["impact_uid"].isin(selected_uids)].copy()
     st.caption(f"Export selection: {len(impacts):,} impacts")
 
     st.subheader("2. Select columns")
@@ -176,12 +215,13 @@ def render_export(summary: pd.DataFrame, db_path: str, db_module) -> None:
         st.caption("CSV mode: one impact per row, selected metadata and metrics as columns.")
 
     # Keep stale exports from being downloaded after filters/selections change.
-    signature = repr((tuple(datasets), sim_filter, search, tuple(picks),
+    signature = repr((tuple(datasets), sim_filter, search, tuple(picks), pasted_ids,
                       tuple(columns), tuple(dataset_columns), tuple(metric_keys), tuple(stages),
                       waveform, tuple(channels), nifti, source_files))
     if st.session_state.get("export_v2_signature") != signature:
         st.session_state.pop("export_v2_result", None)
-    if st.button("Build export", type="primary", use_container_width=True):
+    if st.button("Build export", type="primary", use_container_width=True,
+                 disabled=not bulk_valid or impacts.empty):
         try:
             if use_zip and len(impacts) > ex.MAX_ZIP_IMPACTS:
                 raise ex.ExportError("For a ZIP, select no more than 100 impacts. "
