@@ -145,11 +145,11 @@ INSERT INTO impacts (
     source_row_number, notes
 )
 SELECT
-    'IMP_DS013_' || s.impact_key,
+    'IMP_DS013_' || split_part(s.impact_key, '-', 1) || '-' || lpad(split_part(s.impact_key, '-', 2), 4, '0'),
     'DS013',
     p.participant_uid,
     e.event_uid,
-    NULLIF(s.source_impact_id, ''),
+    CASE WHEN NULLIF(s.source_impact_id, '') IS NULL THEN NULL ELSE split_part(s.source_impact_id, '-', 1) || '-' || lpad(split_part(s.source_impact_id, '-', 2), 4, '0') END,
     NULLIF(s.source_sample_id, ''),
     TRY_CAST(NULLIF(s.impact_timestamp, '') AS TIMESTAMP),
     TRY_CAST(NULLIF(s.impact_time, '') AS TIME),
@@ -184,7 +184,7 @@ WITH a AS (
 )
 SELECT
     'ANN_DS013_' || printf('%07d', rn),
-    'IMP_DS013_' || impact_key,
+    'IMP_DS013_' || split_part(impact_key, '-', 1) || '-' || lpad(split_part(impact_key, '-', 2), 4, '0'),
     attribute_name,
     NULLIF(value_text, ''),
     TRY_CAST(NULLIF(value_numeric, '') AS DOUBLE),
@@ -208,7 +208,7 @@ INSERT INTO kinematic_records (
 )
 SELECT
     'KIN_IMP_DS013_' || impact_key || '_' || UPPER(data_stage),
-    'IMP_DS013_' || impact_key,
+    'IMP_DS013_' || split_part(impact_key, '-', 1) || '-' || lpad(split_part(impact_key, '-', 2), 4, '0'),
     data_stage,
     TRY_CAST(NULLIF(sample_interval_ms, '') AS DOUBLE),
     TRY_CAST(NULLIF(n_samples, '') AS INTEGER),
