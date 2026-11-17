@@ -112,8 +112,19 @@ def _slug(value: object) -> str:
 
 
 def _metric_column(key: str) -> str:
-    """Stable snake_case metric header, including provenance and units."""
+    """Stable metric header; approved brain-strain metrics use uppercase labels."""
     kind, stage, roi, name, method, unit, model, version = json.loads(key)
+    roi_abbreviation = {
+        "Whole Brain": "WB",
+        "Brainstem": "BS",
+        "Corpus Callosum Genu": "CCG",
+        "Corpus Callosum Body": "CCB",
+        "Corpus Callosum Splenium": "CCS",
+    }
+    if kind == "brain" and roi in roi_abbreviation and name in {
+        "MPS90", "MPS95", "MPSR90", "MPSR95"
+    }:
+        return f"{roi_abbreviation[roi]}_{name}"
     parts = (["kinematics", name, unit] if kind == "kinematic"
              else ["brain", roi, name, method, model, version, unit])
     return "_".join(filter(None, (_slug(x) for x in parts)))[:160]
